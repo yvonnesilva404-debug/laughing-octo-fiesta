@@ -1,33 +1,6 @@
-# Job Board Aggregator
-
-Automated job board aggregating 200,000+ positions from 5,000+ companies across five major ATS platforms. Updated daily via GitHub Actions.
-
-## Live Site
-
 [View Job Board](https://feashliaa.github.io/job-board-aggregator)
 
 ## Features
-
-- **Multi-platform scraping**: Greenhouse, Lever, Ashby, BambooHR, and Workday APIs scraped in parallel using `concurrent.futures`
-- **Progressive loading**: Chunked gzip data loaded via Web Workers for fast initial render
-- **Advanced filtering**: Filter by title, company, location, ATS platform, experience level, and exclude keywords. Toggle remote-only, hide recruiter postings, or hide already-applied jobs
-- **Job tier classification**: Automatic skill-level tagging (intern/entry/mid/senior) using weighted keyword scoring on job titles
-- **Application tracking**: Mark jobs as saved, applied, or ignored with batch update support via localStorage
-- **URL state sync**: Filter/sort/page state persisted in the URL for shareable/bookmarkable searches
-- **Responsive design**: Desktop table view with card-based mobile layout
-- **Automated pipeline**: Daily GitHub Actions workflow: scrape → merge with existing data → commit chunks → create release
-
-## Tech Stack
-
-| Layer    | Tools                                                  |
-| -------- | ------------------------------------------------------ |
-| Frontend | Vanilla JavaScript (ES Modules), Bootstrap 5, HTML/CSS |
-| Scraping | Python 3.12, `requests`, `concurrent.futures`, `gzip`  |
-| Data     | Chunked gzip JSON, Web Workers for decompression       |
-| CI/CD    | GitHub Actions (daily cron + manual dispatch)          |
-| Hosting  | GitHub Pages                                           |
-
-## Architecture
 
 ```
 scripts/
@@ -64,13 +37,6 @@ data/
 
 ## Local Development
 
-```bash
-git clone https://github.com/Feashliaa/job-board-aggregator.git
-cd job-board-aggregator
-python -m http.server 8000
-# Visit http://localhost:8000
-```
-
 To run the scraper locally:
 
 ```bash
@@ -78,11 +44,3 @@ cd scripts
 pip install -r requirements.txt
 python scraper.py --source manual
 ```
-
-## License
-
-This project is licensed under the MIT License ==> see the [LICENSE](LICENSE) file for details.
-
----
-
-Built by [Riley Dorrington](https://github.com/Feashliaa)
