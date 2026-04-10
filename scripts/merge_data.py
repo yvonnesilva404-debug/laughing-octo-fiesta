@@ -26,7 +26,11 @@ def load_chunks(directory):
     """Load all jobs from chunked gzip files via manifest."""
     directory = Path(directory)
     if not directory.is_absolute():
-        directory = BASE_DIR / directory
+        cwd_candidate = Path.cwd() / directory
+        if cwd_candidate.exists():
+            directory = cwd_candidate
+        else:
+            directory = BASE_DIR / directory
 
     manifest_path = directory / "jobs_manifest.json"
     if not manifest_path.exists():
@@ -48,7 +52,11 @@ def load_partial_chunks(directory):
     """Load all partial scrape chunk files from a directory."""
     directory = Path(directory)
     if not directory.is_absolute():
-        directory = BASE_DIR / directory
+        cwd_candidate = Path.cwd() / directory
+        if cwd_candidate.exists():
+            directory = cwd_candidate
+        else:
+            directory = BASE_DIR / directory
 
     jobs = []
     chunk_files = sorted(directory.rglob("jobs_chunk_partial_*.json.gz"))
