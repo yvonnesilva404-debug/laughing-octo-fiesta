@@ -1,0 +1,172 @@
+import argparse
+import glob
+import json
+import gzip
+import os
+import re
+from pathlib import Path
+from datetime import datetime, timezone
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR.parent / 'data'
+OUTPUT_DIR = BASE_DIR / 'output'
+CHUNK_SIZE = 25_000
+
+def get_dedup_key(job):
+    url = job.get("url", "")
+    if job.get("ats") == "Workday":
+        # Extract numeric job ID from URL, fall back to url if not found
+        match = re.search(r'/jobs/(\d+)', url)
+        if match:
+            company = job.get("company", "")
+            return f"workday:{company}:{match.group(1)}"
+    return url
+
+def load_chunks(directory):
+    """Load all jobs from chunked gzip files via manifest."""
+    directory = Path(directory)
+    if not directory.is_absolute():
+        directory = BASE_DIR / directory
+
+    manifest_path = directory / "jobs_manifest.json"
+    if not manifest_path.exists():
+        return []
+
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+
+    jobs = []
+    for chunk_file in manifest["chunks"]:
+        chunk_path = directory / chunk_file
+        if chunk_path.exists():
+            with gzip.open(chunk_path, "rt", encoding="utf-8") as f:
+                jobs.extend(json.load(f))
+    return jobs
+
+
+def load_partial_chunks(directory):
+    """Load all partial scrape chunk files from a directory."""
+    directory = Path(directory)
+    if not directory.is_absolute():
+        directory = BASE_DIR / directory
+
+    jobs = []
+    chunk_files = sorted(directory.rglob("jobs_chunk_partial_*.json.gz"))
+    if not chunk_files:
+        raise FileNotFoundError(
+            f"No partial scrape chunks found in {directory}."
+        )
+
+    for chunk_path in chunk_files:
+        with gzip.open(chunk_path, "rt", encoding="utf-8") as f:
+            jobs.extend(json.load(f))
+    return jobs
+
+
+def save_chunks(jobs, directory, timestamp):
+    """Write chunked gzip files + manifest."""
+    directory = Path(directory)
+    if not directory.is_absolute():
+        directory = BASE_DIR.parent / directory
+
+    directory.mkdir(exist_ok=True)
+
+    # Clean old chunks
+    for f in os.listdir(directory):
+        if f.startswith("jobs_chunk_") and f.endswith(".json.gz"):
+            os.remove(os.path.join(directory, f))
+
+    # Sort consistently
+    jobs.sort(key=lambda x: (x.get('company', '').lower(), x.get('title', '').lower()))
+
+    chunks = [jobs[i:i + CHUNK_SIZE] for i in range(0, len(jobs), CHUNK_SIZE)]
+    chunk_filenames = []
+
+    for idx, chunk in enumerate(chunks):
+        chunk_file = f"jobs_chunk_{idx}.json.gz"
+        with gzip.open(os.path.join(directory, chunk_file), "wt", encoding="utf-8") as f:
+            json.dump(chunk, f, indent=0)
+        chunk_filenames.append(chunk_file)
+        print(f"  Chunk {idx}: {len(chunk):,} jobs")
+
+    manifest = {
+        "chunks": chunk_filenames,
+        "totalJobs": len(jobs),
+        "last_updated": timestamp,
+    }
+    with open(os.path.join(directory, "jobs_manifest.json"), "w") as f:
+        json.dump(manifest, f, indent=2)
+
+
+def merge_job_data(partial_dir=None):
+    """Merge new scrape with existing data, removing stale jobs."""
+    if partial_dir:
+        new_jobs = load_partial_chunks(partial_dir)
+        print(f"Loaded partial scrape: {len(new_jobs):,} jobs from {partial_dir}")
+    else:
+        new_jobs = load_chunks(OUTPUT_DIR)
+        print(f"New scrape: {len(new_jobs):,} jobs")
+
+    existing_jobs = load_chunks(DATA_DIR)
+    print(f"Existing data: {len(existing_jobs):,} jobs")
+
+    # Merge by URL
+    merged = {}
+    stale_count = 0
+
+    for job in existing_jobs:
+        key = get_dedup_key(job)
+        if not key:
+            continue
+        scraped = job.get("scraped_at")
+        if scraped:
+            try:
+                scraped_date = datetime.fromisoformat(scraped.replace("Z", ""))
+                age_days = (datetime.now(timezone.utc) - scraped_date).days
+                if age_days <= 14:
+                    merged[key] = job
+                else:
+                    stale_count += 1
+            except Exception:
+                merged[key] = job
+        else:
+            merged[key] = job
+
+    if stale_count > 0:
+        print(f"Dropped {stale_count:,} stale jobs (>14 days old)")
+
+    # New scrape always wins on duplicates
+    for job in new_jobs:
+        key = get_dedup_key(job)
+        if key:
+            merged[key] = job
+
+    final_jobs = list(merged.values())
+    print(f"Merged result: {len(final_jobs):,} jobs")
+
+    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    save_chunks(final_jobs, DATA_DIR, timestamp)
+
+    # Update metadata
+    metadata_path = OUTPUT_DIR / "metadata.json"
+    if not metadata_path.exists():
+        raise FileNotFoundError(f"metadata.json not found in {OUTPUT_DIR}")
+
+    with open(metadata_path) as f:
+        metadata = json.load(f)
+    metadata["total_jobs"] = len(final_jobs)
+    with open(DATA_DIR / "metadata.json", "w") as f:
+        json.dump(metadata, f, indent=2)
+
+    print("Merge complete")
+    return len(final_jobs)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Merge scraped job data into final chunked output.")
+    parser.add_argument(
+        "--partial-dir",
+        help="Directory containing partial scrape chunk artifacts (jobs_chunk_partial_*.json.gz).",
+    )
+    args = parser.parse_args()
+    merge_job_data(partial_dir=args.partial_dir)
