@@ -2,8 +2,6 @@ name: Update Jobs
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *'
 
 jobs:
   scrape:
@@ -30,6 +28,12 @@ jobs:
         with:
           name: scrape-chunk-${{ matrix.chunk_id }}
           path: scripts/output/jobs_chunk_partial_${{ matrix.chunk_id }}*.json.gz
+      - name: Upload dead slug artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dead-slugs-chunk-${{ matrix.chunk_id }}
+          path: data/dead_slugs/*.json
+          if-no-files-found: ignore
 
   merge:
     needs: scrape
@@ -46,10 +50,35 @@ jobs:
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
       - name: Merge partial chunks
         run: python scripts/merge_data.py --partial-dir scripts/output
-      - name: Commit merged data
+      - name: Merge dead slugs
+        run: |
+          python - <<'EOF'
+          import json
+          from pathlib import Path
+
+          merged: dict[str, set] = {}
+          for chunk_dir in Path("scripts/output").glob("dead-slugs-chunk-*"):
+              for slug_file in chunk_dir.glob("*.json"):
+                  platform = slug_file.stem
+                  slugs = set(json.loads(slug_file.read_text()))
+                  merged.setdefault(platform, set()).update(slugs)
+
+          if merged:
+              out_dir = Path("data/dead_slugs")
+              out_dir.mkdir(exist_ok=True)
+              for platform, new_slugs in merged.items():
+                  out_file = out_dir / f"{platform}.json"
+                  existing = set(json.loads(out_file.read_text())) if out_file.exists() else set()
+                  combined = sorted(new_slugs | existing)
+                  out_file.write_text(json.dumps(combined, indent=2))
+              print(f"Merged dead slugs for: {sorted(merged)}")
+          else:
+              print("No dead slug artifacts found — skipping")
+          EOF
+      - name: Push changes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add data/jobs_chunk_*.json.gz data/jobs_manifest.json data/metadata.json
           git commit -m 'Update jobs data [skip ci]' || echo "No changes to commit"
-          git push origin HEAD:main
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/yvonnesilva404-debug/laughing-octo-fiesta.git HEAD:main
