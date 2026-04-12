@@ -46,10 +46,10 @@ jobs:
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
       - name: Merge partial chunks
         run: python scripts/merge_data.py --partial-dir scripts/output
-      - name: Commit merged data
+      - name: Push changes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add data/jobs_chunk_*.json.gz data/jobs_manifest.json data/metadata.json
           git commit -m 'Update jobs data [skip ci]' || echo "No changes to commit"
-          git push origin HEAD:main
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/yvonnesilva404-debug/laughing-octo-fiesta.git HEAD:main
