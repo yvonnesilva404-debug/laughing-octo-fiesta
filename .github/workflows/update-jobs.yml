@@ -2,9 +2,30 @@ name: Update Jobs
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode: full scrape+merge, or smoke push/auth check"
+        required: true
+        default: full
+        type: choice
+        options:
+          - full
+          - smoke
 
 jobs:
+  smoke-auth-push:
+    if: ${{ github.event.inputs.mode == 'smoke' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify push/auth path (dry-run)
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git push --dry-run origin HEAD:master
+
   scrape:
+    if: ${{ github.event.inputs.mode != 'smoke' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -36,6 +57,7 @@ jobs:
           if-no-files-found: ignore
 
   merge:
+    if: ${{ github.event.inputs.mode != 'smoke' }}
     needs: scrape
     runs-on: ubuntu-latest
     steps:
