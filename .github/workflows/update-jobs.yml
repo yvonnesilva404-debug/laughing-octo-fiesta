@@ -12,6 +12,9 @@ on:
           - full
           - smoke
 
+permissions:
+  contents: write
+
 jobs:
   smoke-auth-push:
     if: ${{ github.event.inputs.mode == 'smoke' }}
@@ -22,7 +25,12 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git push --dry-run origin HEAD:master
+          PUSH_TOKEN='${{ secrets.GH_PAT }}'
+          if [ -z "$PUSH_TOKEN" ]; then
+            PUSH_TOKEN='${{ github.token }}'
+          fi
+          git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push --dry-run origin HEAD:${{ github.event.repository.default_branch }}
 
   scrape:
     if: ${{ github.event.inputs.mode != 'smoke' }}
@@ -101,6 +109,11 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add data/jobs_chunk_*.json.gz data/jobs_manifest.json data/metadata.json
+          git add data/jobs_chunk_*.json.gz data/jobs_manifest.json data/metadata.json data/dead_slugs/
           git commit -m 'Update jobs data [skip ci]' || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/yvonnesilva404-debug/laughing-octo-fiesta.git HEAD:main
+          PUSH_TOKEN='${{ secrets.GH_PAT }}'
+          if [ -z "$PUSH_TOKEN" ]; then
+            PUSH_TOKEN='${{ github.token }}'
+          fi
+          git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push origin HEAD:${{ github.event.repository.default_branch }}
