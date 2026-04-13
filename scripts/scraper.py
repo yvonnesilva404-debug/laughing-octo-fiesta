@@ -402,10 +402,12 @@ def fetch_company_jobs_greenhouse(slug):
                     )
 
                 return slug, normalized
+            return slug, [], response.status_code
+        return slug, [], response.status_code
 
     except Exception as e:
         print(f"Error fetching Greenhouse for {slug}: {e}")
-    return slug, []
+    return slug, [], None
 
 
 def fetch_ashby_job_posted_date(slug, job_id):
@@ -504,9 +506,10 @@ def fetch_company_jobs_ashby(slug):
                         }
                     )
                 return slug, normalized
+            return slug, [], response.status_code
     except Exception as e:
         print(f"Error fetching Ashby for {slug}: {e}")
-    return slug, []
+    return slug, [], None
 
 
 def fetch_company_jobs_bamboohr(slug):
@@ -533,7 +536,7 @@ def fetch_company_jobs_bamboohr(slug):
                 print(
                     f"Unexpected content type for {slug}: {response.headers.get('Content-Type')}"
                 )
-                return slug, []
+                return slug, [], response.status_code
 
             data = response.json()
             jobs = data.get("result", [])
@@ -569,9 +572,10 @@ def fetch_company_jobs_bamboohr(slug):
                         }
                     )
                 return slug, normalized
+            return slug, [], response.status_code
     except Exception as e:
         print(f"Error fetching BambooHR for {slug}: {e}")
-    return slug, []
+    return slug, [], None
 
 
 def fetch_company_jobs_lever(slug):
@@ -611,9 +615,10 @@ def fetch_company_jobs_lever(slug):
                         }
                     )
                 return slug, normalized
+            return slug, [], response.status_code
     except Exception as e:
         print(f"Error fetching Lever for {slug}: {e}")
-    return slug, []
+    return slug, [], None
 
 
 def fetch_company_jobs_workday(slug):
@@ -648,6 +653,7 @@ def fetch_company_jobs_workday(slug):
         max_retries = 2
         observed_total = None
 
+        status_code = None
         while True:
             payload = {
                 "appliedFacets": {},
@@ -664,11 +670,12 @@ def fetch_company_jobs_workday(slug):
             )
 
             if response.status_code != 200:
+                status_code = response.status_code
                 if retries < max_retries:
                     retries += 1
                     time.sleep(random.uniform(2.0, 4.0))
                     continue
-                break
+                return slug, [], status_code
 
             data = response.json()
             jobs = data.get("jobPostings", [])
@@ -709,10 +716,10 @@ def fetch_company_jobs_workday(slug):
             # Jitter between pages (critical)
             time.sleep(random.uniform(0.8, 1.8))
 
-        return slug, normalized
+        return slug, normalized, status_code
 
     except Exception:
-        return slug, []
+        return slug, [], None
 
 
 def fetch_company_jobs_workable(slug):
@@ -788,8 +795,9 @@ def fetch_company_jobs_workable(slug):
                         }
                     )
                 return slug, normalized
+            return slug, [], response.status_code
         except Exception:
-            return slug, []
+            return slug, [], None
 
 
 def fetch_company_jobs_icims(slug):
