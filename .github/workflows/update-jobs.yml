@@ -109,8 +109,8 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add data/jobs_chunk_*.json.gz data/jobs_manifest.json data/metadata.json
-          git add data/dead_slugs/ 2>/dev/null || echo "No dead slug files to stage"
+          # Stage all generated data updates without failing on missing globs/paths.
+          git add -A data/
           git commit -m 'Update jobs data [skip ci]' || echo "No changes to commit"
           PUSH_TOKEN='${{ secrets.GH_PAT }}'
           if [ -z "$PUSH_TOKEN" ]; then
