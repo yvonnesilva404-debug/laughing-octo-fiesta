@@ -30,7 +30,8 @@ jobs:
             PUSH_TOKEN='${{ github.token }}'
           fi
           git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ github.repository }}.git"
-          git push --dry-run origin HEAD:${{ github.event.repository.default_branch }}
+          # Validate push credentials without requiring fast-forward to main/master.
+          git push --dry-run origin HEAD:refs/heads/__gha_smoke_probe_${{ github.run_id }}
 
   scrape:
     if: ${{ github.event.inputs.mode != 'smoke' }}
