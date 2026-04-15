@@ -1,6 +1,8 @@
 [
   "4flow|wd3|4flow_campus",
   "abcsupply|wd1|lwsupplycareers",
+  "abcsupply|wd1|tcicareers",
+  "adobe|wd5|adobe_careers",
   "ag|wd3|external",
   "alcon|wd5|job",
   "alcority|wd1|alcority",
@@ -11,6 +13,7 @@
   "allegion|wd5|interflex_belgium",
   "armaninollp|wd1|amf",
   "avon|wd5|naturaandcocareers",
+  "azenta|wd1|azenta_external_site",
   "benchmark|wd1|benchmark_careers",
   "bigcommerce|wd12|bigcommerce",
   "binus|wd3|lifeatbinusrobots",
@@ -69,6 +72,7 @@
   "revantage|wd1|shopcore",
   "rmit|wd3|rmit_training_careers",
   "seacor|wd1|waterman",
+  "simedarby|wd3|simedarbycareersite",
   "sizemoreco|wd5|sizemorecareersrobots",
   "sluhn|wd1|t_st_lukes_carbon_campus",
   "sorren|wd12|externalus",
@@ -76,6 +80,7 @@
   "svb|wd5|svbank",
   "synnex|wd5|synnexcareers",
   "tamus|wd1|tamuc_external",
+  "transamerica|wd5|hongkong",
   "transamerica|wd5|singapore",
   "tysonfoods|wd5|tsn2",
   "uasys|wd5|uasystem-workstudy-externalcareersite",
@@ -88,5 +93,6 @@
   "walmart|wd5|walmartcanadaexternal",
   "wework|wd1|corporate",
   "wmeimg|wd1|endeavor",
+  "wmeimg|wd1|wmeimgus",
   "worldvision|wd1|worldvisionkenya"
 ]
