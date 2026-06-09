@@ -172,14 +172,14 @@ def is_remote_job(job):
     return workplace == 'remote'
 
 
-def matches_filters(job, *, location_usa=False, freshness_days=None, remote_only=False, hide_recruiters=False):
+def matches_filters(job, *, location_usa=False, freshness_days=None, remote_only=False, hide_recruiters=False, include_non_us=False):
     if hide_recruiters and is_recruiter_job(job):
         return False
 
     if remote_only and not is_remote_job(job):
         return False
 
-    if location_usa and not is_us_location(job_location_value(job)):
+    if location_usa and not include_non_us and not is_us_location(job_location_value(job)):
         return False
 
     if freshness_days is not None:
@@ -215,6 +215,7 @@ def main():
     parser.add_argument('--data-dir', default=str(DATA_DIR), help='Path to the job data directory')
     parser.add_argument('--output', default='results.csv', help='Output CSV path')
     parser.add_argument('--location-usa', action='store_true', default=True, help='Filter for US-based jobs')
+    parser.add_argument('--include-non-us', action='store_true', default=False, help='Include non-US jobs alongside US (bypasses location-usa filter)')
     parser.add_argument('--freshness-days', type=int, default=1, help='Max age of jobs in days')
     parser.add_argument('--remote-only', action='store_true', default=True, help='Only include remote jobs')
     parser.add_argument('--hide-recruiters', action='store_true', default=True, help='Exclude recruiter-posted jobs')
@@ -226,6 +227,7 @@ def main():
     filtered = [job for job in jobs if matches_filters(
         job,
         location_usa=args.location_usa,
+        include_non_us=args.include_non_us,
         freshness_days=args.freshness_days,
         remote_only=args.remote_only,
         hide_recruiters=args.hide_recruiters,
