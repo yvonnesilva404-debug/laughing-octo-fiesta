@@ -16,13 +16,49 @@ US_LOCATION_ALIASES = {
 
 REMOTE_TERMS = {'remote', 'anywhere', 'work from home', 'wfh', 'distributed', 'virtual', 'telecommute'}
 NON_US_HINTS = {
-    'canada', 'portugal', 'belgium', 'japan', 'china', 'hong kong', 'taiwan', 'south korea',
+    'canada',
+    'portugal', 'belgium', 'japan', 'china', 'hong kong', 'taiwan', 'south korea',
     'north korea', 'czech republic', 'czechia', 'czech', 'chile', 'uruguay', 'malaysia',
     'costa rica', 'south africa', 'austria', 'denmark', 'estonia', 'norway', 'finland',
     'poland', 'greece', 'switzerland', 'europe', 'emea', 'apac', 'latam', 'uk', 'united kingdom',
     'ireland', 'germany', 'france', 'spain', 'italy', 'netherlands', 'sweden', 'stockholm',
     'india', 'bengaluru', 'australia', 'new zealand', 'singapore', 'mexico', 'brazil',
-    'argentina', 'philippines', 'vietnam', 'remote-europe', 'remote uk',
+    'argentina', 'philippines', 'vietnam',
+    # countries / regions commonly missing
+    'south america', 'central america', 'latin america',
+    'england', 'scotland', 'wales', 'northern ireland',
+    'serbia', 'croatia', 'slovakia', 'slovenia', 'bosnia', 'montenegro', 'albania',
+    'bulgaria', 'romania', 'hungary', 'moldova',
+    'turkey', 'ukraine', 'belarus', 'iceland', 'luxembourg', 'malta', 'cyprus',
+    'russia',
+    'colombia', 'peru', 'paraguay', 'bolivia', 'ecuador', 'venezuela',
+    'panama', 'guatemala', 'honduras', 'el salvador', 'nicaragua', 'cuba', 'dominican republic',
+    'indonesia', 'thailand', 'myanmar', 'cambodia', 'laos',
+    'bangladesh', 'pakistan', 'sri lanka', 'nepal', 'mongolia',
+    'saudi arabia', 'uae', 'dubai', 'qatar', 'kuwait', 'oman', 'bahrain',
+    'jordan', 'lebanon', 'israel',
+    'nigeria', 'kenya', 'egypt', 'morocco', 'tunisia', 'algeria',
+    'ethiopia', 'ghana', 'senegal', 'tanzania', 'uganda', 'angola', 'mozambique',
+    'cameroon', 'madagascar',
+    # common remote-X patterns
+    'remote-europe', 'remote uk', 'remote canada', 'remote germany', 'remote france',
+    'remote india', 'remote australia', 'remote ireland', 'remote netherlands',
+    'remote sweden', 'remote spain', 'remote italy', 'remote portugal', 'remote belgium',
+    'remote switzerland', 'remote austria', 'remote poland', 'remote brazil', 'remote mexico',
+    'remote singapore', 'remote japan',
+}
+
+NON_US_COUNTRY_CODES = {
+    # non-conflicting ISO country codes (not in US state abbreviations)
+    'can',  # Canada
+    'uk', 'gb', 'gbr', 'fra', 'esp', 'ita', 'nld', 'swe', 'nor', 'dnk', 'fin',
+    'prt', 'bel', 'che', 'aut', 'pol', 'cze', 'grc', 'hun', 'rou', 'bgr', 'srb', 'hrv',
+    'svk', 'svn', 'est', 'lva', 'ltu', 'ukr', 'blr', 'rus', 'tur',
+    'chn', 'jpn', 'kor', 'tha', 'vnm', 'mys', 'idn', 'phl', 'sgp', 'hkg', 'twn',
+    'aus', 'nzl',
+    'mex', 'bra', 'arg', 'chl', 'col', 'per', 'ury', 'ecu', 'ven', 'cri', 'pan',
+    'egy', 'mar', 'tun', 'dza', 'zaf', 'nga', 'ken', 'eth', 'gha',
+    'sau', 'are', 'qat', 'kwt', 'omn', 'bhr', 'jor', 'lbn', 'isr',
 }
 
 US_STATE_CODES = {
@@ -109,6 +145,8 @@ def is_us_location(raw_location):
         return True
     if any(city in location for city in US_CITY_HINTS):
         return True
+    if any(token in NON_US_COUNTRY_CODES for token in tokens):
+        return False
     return False
 
 
