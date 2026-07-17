@@ -206,7 +206,7 @@ def pull(category_path: str, max_pages: int = 5, delay: float = 0.5) -> List[Dic
     all_jobs = []
     seen_ids = set()
 
-    for page in range(4, max_pages + 1):
+    for page in range(1, max_pages + 1):
         separator = "&" if "?" in category_path else "?"
         url = f"{BASE}{category_path}{separator}page={page}"
         print(f"[builtin] fetching category page: {url}")
