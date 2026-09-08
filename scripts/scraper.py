@@ -746,7 +746,7 @@ def fetch_company_jobs_workable(slug):
                 # remote-only by default for speed
                 "remote": [True],
             }
-            response = requests.post(url, json=payload, headers=headers)
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
 
             if response.status_code == 200:
                 data = response.json()
