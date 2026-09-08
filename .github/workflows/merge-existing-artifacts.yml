@@ -1,0 +1,74 @@
+name: Merge Existing Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Completed update-jobs run whose artifacts should be merged"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: update-jobs-main
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.source_run_id }}
+          path: scripts/output
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: 3.12
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Merge partial chunks
+        run: python scripts/merge_data.py --partial-dir scripts/output
+
+      - name: Merge dead slugs
+        run: |
+          python - <<'EOF'
+          import json
+          from pathlib import Path
+
+          merged: dict[str, set] = {}
+          for chunk_dir in Path("scripts/output").glob("dead-slugs-chunk-*"):
+              for slug_file in chunk_dir.glob("*.json"):
+                  platform = slug_file.stem
+                  slugs = set(json.loads(slug_file.read_text()))
+                  merged.setdefault(platform, set()).update(slugs)
+
+          if merged:
+              out_dir = Path("data/dead_slugs")
+              out_dir.mkdir(exist_ok=True)
+              for platform, new_slugs in merged.items():
+                  out_file = out_dir / f"{platform}.json"
+                  existing = set(json.loads(out_file.read_text())) if out_file.exists() else set()
+                  out_file.write_text(json.dumps(sorted(new_slugs | existing), indent=2))
+          EOF
+
+      - name: Push merged data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A data/
+          git commit -m 'Update jobs data [skip ci]' || echo "No changes to commit"
+          PUSH_TOKEN='${{ secrets.GH_PAT }}'
+          if [ -z "$PUSH_TOKEN" ]; then PUSH_TOKEN='${{ github.token }}'; fi
+          git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ github.repository }}.git"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
