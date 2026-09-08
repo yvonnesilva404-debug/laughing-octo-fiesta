@@ -20,7 +20,7 @@ jobs:
     if: ${{ github.event.inputs.mode == 'smoke' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify push/auth path (dry-run)
         run: |
           git config user.name 'github-actions[bot]'
@@ -45,8 +45,8 @@ jobs:
                    41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
       max-parallel: 8
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.12
       - name: Install dependencies
@@ -54,27 +54,31 @@ jobs:
       - name: Run scraper chunk
         run: python scripts/scraper.py --source automated --platform all --chunks 50 --chunk-id ${{ matrix.chunk_id }}
       - name: Upload chunk artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: scrape-chunk-${{ matrix.chunk_id }}
           path: scripts/output/jobs_chunk_partial_${{ matrix.chunk_id }}*.json.gz
+          compression-level: 0
+          retention-days: 2
       - name: Upload dead slug artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dead-slugs-chunk-${{ matrix.chunk_id }}
           path: data/dead_slugs/*.json
           if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 2
 
   merge:
     if: ${{ github.event.inputs.mode != 'smoke' }}
     needs: scrape
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: scripts/output
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.12
       - name: Install dependencies
